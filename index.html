@@ -26,6 +26,22 @@
             width: 100%;
             max-width: 600px;
             text-align: center;
+            position: relative;
+            border: 5px solid transparent;
+            background-clip: padding-box;
+            border-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb) 1;
+        }
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            right: -5px;
+            bottom: -5px;
+            z-index: -1;
+            background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb);
+            border-radius: 10px;
         }
 
         h1 {
@@ -90,6 +106,11 @@
         #result {
             margin-top: 20px;
             display: none;
+            padding: 15px;
+            border: 5px solid transparent;
+            background-clip: padding-box;
+            border-image: linear-gradient(45deg, #a1c4fd, #c2e9fb, #fbc2eb) 1;
+            border-radius: 10px;
         }
 
         #bmiValue, #bmiStatus {
@@ -139,6 +160,9 @@
             max-width: 500px;
             max-height: 80vh;
             overflow-y: auto;
+            border: 5px solid transparent;
+            background-clip: padding-box;
+            border-image: linear-gradient(45deg, #84fab0, #8fd3f4, #a6c1ee) 1;
         }
 
         .popup h2 {
@@ -174,7 +198,9 @@
             background-color: #f9f9f9;
             padding: 15px;
             border-radius: 5px;
-            border: 1px solid #ddd;
+            border: 5px solid transparent;
+            background-clip: padding-box;
+            border-image: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb) 1;
         }
 
         .student-info h3 {
@@ -342,14 +368,15 @@
         }
 
         // ฟังก์ชันบันทึกข้อมูลลง Local Storage
-        function saveToLocalStorage(student, weight, height, bmi, status) {
+        function saveToLocalStorage(student, weight, height, bmi, status, selectedClass) {
             const record = {
                 student: student,
                 weight: weight,
                 height: height,
                 bmi: bmi,
                 status: status,
-                date: new Date().toLocaleString()
+                date: new Date().toLocaleString(),
+                class: selectedClass
             };
 
             // ดึงข้อมูลเดิมจาก Local Storage
@@ -360,22 +387,30 @@
 
         // ฟังก์ชันแสดงประวัติการบันทึกใน Popup
         function showHistoryPopup() {
+            const selectedClass = document.getElementById('class').value;
             const history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
             const historyBody = document.getElementById('historyBody');
             historyBody.innerHTML = ''; // ล้างข้อมูลเก่า
 
-            history.forEach((record, index) => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${record.date}</td>
-                    <td>${record.student}</td>
-                    <td>${record.weight}</td>
-                    <td>${record.height}</td>
-                    <td>${record.bmi}</td>
-                    <td>${record.status}</td>
-                `;
-                historyBody.appendChild(row);
-            });
+            // กรองข้อมูลเฉพาะห้องที่เลือก
+            const filteredHistory = history.filter(record => record.class === selectedClass);
+
+            if (filteredHistory.length === 0) {
+                historyBody.innerHTML = '<tr><td colspan="6">ไม่มีข้อมูลสำหรับห้องนี้</td></tr>';
+            } else {
+                filteredHistory.forEach((record, index) => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${record.date}</td>
+                        <td>${record.student}</td>
+                        <td>${record.weight}</td>
+                        <td>${record.height}</td>
+                        <td>${record.bmi}</td>
+                        <td>${record.status}</td>
+                    `;
+                    historyBody.appendChild(row);
+                });
+            }
 
             // แสดง Popup ประวัติ
             document.getElementById('historyPopup').style.display = 'block';
@@ -416,14 +451,17 @@
 
         // ฟังก์ชันบันทึกข้อมูลเป็น CSV
         function exportToCSV() {
+            const selectedClass = document.getElementById('class').value;
             const history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
-            if (history.length === 0) {
+            const filteredHistory = history.filter(record => record.class === selectedClass);
+
+            if (filteredHistory.length === 0) {
                 alert("ไม่มีข้อมูลที่จะบันทึก");
                 return;
             }
 
             const csvHeader = "วันที่,นักเรียน,น้ำหนัก (กก.),ส่วนสูง (ซม.),BMI,สถานะ\n";
-            const csvRows = history.map(record =>
+            const csvRows = filteredHistory.map(record =>
                 `${record.date},${record.student},${record.weight},${record.height},${record.bmi},${record.status}`
             ).join("\n");
 
@@ -431,20 +469,23 @@
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            link.download = "bmi_history.csv";
+            link.download = `bmi_history_${selectedClass.replace('/', '_')}.csv`;
             link.click();
         }
 
         // ฟังก์ชันพิมพ์ข้อมูล
         function printData() {
+            const selectedClass = document.getElementById('class').value;
             const history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
-            if (history.length === 0) {
+            const filteredHistory = history.filter(record => record.class === selectedClass);
+
+            if (filteredHistory.length === 0) {
                 alert("ไม่มีข้อมูลที่จะพิมพ์");
                 return;
             }
 
             const printContent = `
-                <h2>ประวัติการบันทึก</h2>
+                <h2>ประวัติการบันทึก (ห้อง ${selectedClass})</h2>
                 <table>
                     <thead>
                         <tr>
@@ -457,7 +498,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        ${history.map(record => `
+                        ${filteredHistory.map(record => `
                             <tr>
                                 <td>${record.date}</td>
                                 <td>${record.student}</td>
@@ -475,7 +516,7 @@
             printWindow.document.write(`
                 <html>
                     <head>
-                        <title>พิมพ์ประวัติการบันทึก</title>
+                        <title>พิมพ์ประวัติการบันทึก (ห้อง ${selectedClass})</title>
                         <style>
                             table {
                                 width: 100%;
@@ -527,7 +568,7 @@
                 document.getElementById('result').style.display = 'block';
 
                 // บันทึกข้อมูลลง Local Storage
-                saveToLocalStorage(student, weight, height * 100, bmi, status);
+                saveToLocalStorage(student, weight, height * 100, bmi, status, selectedClass);
 
                 // แสดงข้อมูลนักเรียน
                 showStudentInfo(student, selectedClass, weight, height * 100, bmi, status);
