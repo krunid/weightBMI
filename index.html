@@ -368,22 +368,54 @@
         }
 
         // ฟังก์ชันบันทึกข้อมูลลง Local Storage
-        function saveToLocalStorage(student, weight, height, bmi, status, selectedClass) {
-            const record = {
-                student: student,
-                weight: weight,
-                height: height,
-                bmi: bmi,
-                status: status,
-                date: new Date().toLocaleString(),
-                class: selectedClass
-            };
+        // ฟังก์ชันบันทึกข้อมูลลง Local Storage
+function saveToLocalStorage(student, weight, height, bmi, status, selectedClass) {
+    const record = {
+        student: student,
+        weight: parseFloat(weight).toFixed(2), // แสดงทศนิยม 2 ตำแหน่ง
+        height: parseFloat(height).toFixed(2), // แสดงทศนิยม 2 ตำแหน่ง
+        bmi: bmi,
+        status: status,
+        date: new Date().toLocaleString(),
+        class: selectedClass
+    };
 
-            // ดึงข้อมูลเดิมจาก Local Storage
-            let history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
-            history.push(record); // เพิ่มข้อมูลใหม่
-            localStorage.setItem('bmiHistory', JSON.stringify(history)); // บันทึกข้อมูลใหม่
-        }
+    // ดึงข้อมูลเดิมจาก Local Storage
+    let history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
+    history.push(record); // เพิ่มข้อมูลใหม่
+    localStorage.setItem('bmiHistory', JSON.stringify(history)); // บันทึกข้อมูลใหม่
+}
+
+// ฟังก์ชันแสดงประวัติการบันทึกใน Popup
+function showHistoryPopup() {
+    const selectedClass = document.getElementById('class').value;
+    const history = JSON.parse(localStorage.getItem('bmiHistory')) || [];
+    const historyBody = document.getElementById('historyBody');
+    historyBody.innerHTML = ''; // ล้างข้อมูลเก่า
+
+    // กรองข้อมูลเฉพาะห้องที่เลือก
+    const filteredHistory = history.filter(record => record.class === selectedClass);
+
+    if (filteredHistory.length === 0) {
+        historyBody.innerHTML = '<tr><td colspan="6">ไม่มีข้อมูลสำหรับห้องนี้</td></tr>';
+    } else {
+        filteredHistory.forEach((record, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${record.date}</td>
+                <td>${record.student}</td>
+                <td>${record.weight}</td>
+                <td>${record.height}</td>
+                <td>${record.bmi}</td>
+                <td>${record.status}</td>
+            `;
+            historyBody.appendChild(row);
+        });
+    }
+
+    // แสดง Popup ประวัติ
+    document.getElementById('historyPopup').style.display = 'block';
+}
 
         // ฟังก์ชันแสดงประวัติการบันทึกใน Popup
         function showHistoryPopup() {
